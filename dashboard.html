@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizPulse — Business Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ──────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:13px; }
+body {
+  font-family:'DM Sans',sans-serif;
+  background:#0a0a0f; color:#f0f0f5;
+  min-height:100vh; overflow-x:hidden; line-height:1.4;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(200,241,53,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(200,241,53,.025) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+
+/* ── TOKENS ──────────────────────────── */
+:root {
+  --bg:#0a0a0f; --sur:#111118; --s2:#18181f; --s3:#13131a;
+  --bdr:#23232e; --text:#f0f0f5; --mut:#5a5a6e;
+  --grn:#c8f135; --pur:#6c63ff; --red:#ff6b6b; --tel:#38d9a9; --yel:#ffc107;
+  --r:13px; --g:13px;
+}
+
+/* ── LAYOUT ──────────────────────────── */
+.wrap { position:relative; z-index:1; max-width:1360px; margin:0 auto; padding:0 24px; }
+
+/* ── HEADER ──────────────────────────── */
+header {
+  position:sticky; top:0; z-index:100;
+  background:rgba(10,10,15,.95); backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--bdr);
+}
+.hdr {
+  max-width:1360px; margin:0 auto; padding:12px 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.logo {
+  font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:800;
+  letter-spacing:-.3px; display:flex; align-items:center; gap:8px; white-space:nowrap;
+}
+.logo-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  background:var(--grn); box-shadow:0 0 9px var(--grn);
+  animation:blink 2s infinite;
+}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(1.4)}}
+.hdr-r { display:flex; align-items:center; gap:9px; flex-shrink:0; }
+.pill {
+  font-family:'DM Mono',monospace; font-size:.64rem;
+  padding:4px 11px; border-radius:99px; border:1px solid var(--bdr);
+  background:var(--s2); color:var(--mut); white-space:nowrap;
+}
+.pill-live {
+  display:flex; align-items:center; gap:5px;
+  background:rgba(200,241,53,.08); border-color:rgba(200,241,53,.28); color:var(--grn);
+}
+.ldot { width:5px; height:5px; border-radius:50%; background:var(--grn); animation:blink 1.4s infinite; flex-shrink:0; }
+.av {
+  width:30px; height:30px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,var(--pur),var(--grn));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-size:.6rem; font-weight:800;
+  border:2px solid var(--bdr); cursor:pointer;
+}
+
+/* ── TABS ──────────────────────────────── */
+.tw { background:var(--sur); border-bottom:1px solid var(--bdr); }
+.tabs { max-width:1360px; margin:0 auto; padding:13px 24px 0; display:flex; gap:3px; }
+.tab {
+  padding:8px 18px; border-radius:7px 7px 0 0;
+  font-size:.77rem; font-weight:500; cursor:pointer;
+  border:1px solid transparent; border-bottom:none;
+  color:var(--mut); transition:all .18s;
+  position:relative; bottom:-1px; white-space:nowrap;
+}
+.tab.active { background:var(--s2); color:var(--text); border-color:var(--bdr); border-bottom-color:var(--s2); }
+.tab:hover:not(.active) { color:var(--text); background:rgba(255,255,255,.03); }
+
+/* ── MAIN ──────────────────────────────── */
+main { padding:24px 0 56px; }
+.panel { display:none; animation:fu .26s ease; }
+.panel.active { display:block; }
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PAGE HEADER ────────────────────────── */
+.ph {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:14px; margin-bottom:18px; flex-wrap:wrap;
+}
+.ph-t {
+  font-family:'Syne',sans-serif; font-weight:800; letter-spacing:-.3px; line-height:1.1;
+  font-size:clamp(1.15rem,1.8vw,1.5rem); white-space:nowrap;
+}
+.ph-s { font-size:.7rem; color:var(--mut); margin-top:4px; }
+.frow { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.fb {
+  padding:5px 13px; border-radius:99px; font-size:.66rem; font-weight:500;
+  font-family:'DM Mono',monospace; cursor:pointer;
+  border:1px solid var(--bdr); background:var(--s2); color:var(--mut);
+  transition:all .18s; white-space:nowrap;
+}
+.fb.on,.fb:hover { background:rgba(200,241,53,.1); border-color:rgba(200,241,53,.35); color:var(--grn); }
+
+/* ── KPI GRID ────────────────────────────── */
+.kg { display:grid; gap:var(--g); margin-bottom:var(--g); }
+.kg4 { grid-template-columns:repeat(4,1fr); }
+.kg3 { grid-template-columns:repeat(3,1fr); }
+@media(max-width:860px){ .kg4,.kg3 { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:480px){ .kg4,.kg3 { grid-template-columns:1fr; } }
+
+.kc {
+  background:var(--s3); border:1px solid var(--bdr); border-radius:var(--r);
+  padding:16px 18px; position:relative; overflow:hidden;
+  transition:border-color .18s,transform .18s;
+}
+.kc:hover { border-color:rgba(200,241,53,.25); transform:translateY(-2px); }
+.kc::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.kc.g::before { background:linear-gradient(90deg,var(--grn),transparent); }
+.kc.p::before { background:linear-gradient(90deg,var(--pur),transparent); }
+.kc.r::before { background:linear-gradient(90deg,var(--red),transparent); }
+.kc.t::before { background:linear-gradient(90deg,var(--tel),transparent); }
+
+.kl {
+  font-size:.58rem; font-weight:600; color:var(--mut);
+  text-transform:uppercase; letter-spacing:.09em; margin-bottom:7px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.kv {
+  font-family:'Syne',sans-serif; font-weight:800; letter-spacing:-1px; line-height:1;
+  font-size:clamp(1.3rem,2.5vw,1.9rem);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.kch { margin-top:7px; font-size:.66rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.kch.up { color:var(--tel); }
+.kch.dn { color:var(--red); }
+
+/* ── CHART GRID ──────────────────────────── */
+.cg  { display:grid; grid-template-columns:2fr 1fr; gap:var(--g); margin-bottom:var(--g); }
+.cg2 { display:grid; grid-template-columns:1fr 1fr;  gap:var(--g); margin-top:var(--g); }
+@media(max-width:860px){ .cg,.cg2 { grid-template-columns:1fr; } }
+
+/* ── CARD ────────────────────────────────── */
+.card {
+  background:var(--s3); border:1px solid var(--bdr); border-radius:var(--r);
+  overflow:hidden; transition:border-color .18s;
+}
+.card:hover { border-color:rgba(200,241,53,.16); }
+.cp { padding:18px; }
+
+.ch { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; }
+.ct {
+  font-family:'Syne',sans-serif; font-size:.83rem; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ctag {
+  font-family:'DM Mono',monospace; font-size:.58rem; flex-shrink:0;
+  padding:3px 9px; border-radius:99px;
+  background:var(--s2); color:var(--mut); border:1px solid var(--bdr); white-space:nowrap;
+}
+.cbox { position:relative; height:200px; }
+
+/* ── TABLE ────────────────────────────────── */
+.th {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid var(--bdr);
+  gap:10px; flex-wrap:wrap;
+}
+.tt { font-family:'Syne',sans-serif; font-size:.83rem; font-weight:700; white-space:nowrap; }
+.ta { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+
+.sb {
+  display:flex; align-items:center; gap:6px;
+  background:var(--s2); border:1px solid var(--bdr); border-radius:7px; padding:5px 11px;
+}
+.sb input {
+  background:none; border:none; outline:none;
+  font-size:.72rem; color:var(--text); width:140px; font-family:'DM Sans',sans-serif;
+}
+.sb input::placeholder { color:var(--mut); }
+.si { color:var(--mut); font-size:.75rem; flex-shrink:0; }
+
+.eb {
+  display:flex; align-items:center; gap:5px; white-space:nowrap;
+  padding:5px 13px; border-radius:7px; font-size:.66rem; font-weight:600;
+  font-family:'DM Mono',monospace; cursor:pointer; transition:all .18s;
+  background:rgba(200,241,53,.1); border:1px solid rgba(200,241,53,.28); color:var(--grn);
+}
+.eb:hover { background:rgba(200,241,53,.18); }
+
+table { width:100%; border-collapse:collapse; table-layout:fixed; }
+thead th {
+  padding:9px 14px; text-align:left;
+  font-size:.58rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em;
+  color:var(--mut); background:var(--s2); cursor:pointer; user-select:none;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+thead th:hover { color:var(--text); }
+tbody tr { border-bottom:1px solid var(--bdr); transition:background .1s; cursor:pointer; }
+tbody tr:hover { background:rgba(200,241,53,.03); }
+tbody tr:last-child { border-bottom:none; }
+td {
+  padding:11px 14px; font-size:.75rem;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* invoice col widths */
+#it th:nth-child(1),#it td:nth-child(1){ width:96px; }
+#it th:nth-child(2),#it td:nth-child(2){ width:auto; min-width:0; }
+#it th:nth-child(3),#it td:nth-child(3){ width:88px; }
+#it th:nth-child(4),#it td:nth-child(4){ width:108px; }
+#it th:nth-child(5),#it td:nth-child(5){ width:88px; }
+
+/* clients col widths */
+#ct th:nth-child(1),#ct td:nth-child(1){ width:auto; min-width:0; }
+#ct th:nth-child(2),#ct td:nth-child(2){ width:100px; }
+#ct th:nth-child(3),#ct td:nth-child(3){ width:88px; }
+#ct th:nth-child(4),#ct td:nth-child(4){ width:56px; }
+#ct th:nth-child(5),#ct td:nth-child(5){ width:86px; }
+
+/* projects col widths */
+#pt th:nth-child(1),#pt td:nth-child(1){ width:auto; min-width:0; }
+#pt th:nth-child(2),#pt td:nth-child(2){ width:120px; }
+#pt th:nth-child(3),#pt td:nth-child(3){ width:150px; }
+#pt th:nth-child(4),#pt td:nth-child(4){ width:72px; }
+#pt th:nth-child(5),#pt td:nth-child(5){ width:94px; }
+
+/* badge */
+.bdg {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 9px; border-radius:99px; font-size:.6rem; font-weight:600;
+  font-family:'DM Mono',monospace; white-space:nowrap; max-width:100%;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.bdg.paid    { background:rgba(56,217,169,.1);  color:var(--tel); border:1px solid rgba(56,217,169,.22); }
+.bdg.pending { background:rgba(255,193,7,.1);   color:var(--yel); border:1px solid rgba(255,193,7,.22); }
+.bdg.overdue { background:rgba(255,107,107,.1); color:var(--red); border:1px solid rgba(255,107,107,.22); }
+.bdg.active  { background:rgba(56,217,169,.1);  color:var(--tel); border:1px solid rgba(56,217,169,.22); }
+.bdg.prospect{ background:rgba(108,99,255,.1);  color:var(--pur); border:1px solid rgba(108,99,255,.22); }
+.bdg-d { width:4px; height:4px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* client cell */
+.cc { display:flex; align-items:center; gap:8px; overflow:hidden; }
+.cav {
+  width:26px; height:26px; border-radius:6px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.55rem; font-weight:800; font-family:'Syne',sans-serif;
+}
+.cn { font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* progress */
+.pw { display:flex; align-items:center; gap:7px; }
+.pb { flex:1; height:4px; border-radius:2px; background:var(--s2); overflow:hidden; min-width:30px; }
+.pf { height:100%; border-radius:2px; }
+.pp { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--mut); flex-shrink:0; width:28px; text-align:right; }
+
+/* pager */
+.pgr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 18px; border-top:1px solid var(--bdr);
+  font-size:.66rem; color:var(--mut); flex-wrap:wrap; gap:7px;
+}
+.pbs { display:flex; gap:3px; }
+.pb2 {
+  width:26px; height:26px; border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--bdr); background:var(--s2);
+  font-size:.66rem; color:var(--mut); cursor:pointer; transition:all .12s;
+}
+.pb2.on,.pb2:hover { background:rgba(200,241,53,.13); color:var(--grn); border-color:rgba(200,241,53,.3); }
+
+/* goals */
+.gi { padding:13px 18px; border-bottom:1px solid var(--bdr); }
+.gi:last-child { border-bottom:none; }
+.gr2 { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; gap:8px; }
+.gn { font-size:.72rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gp { font-family:'DM Mono',monospace; font-size:.64rem; color:var(--mut); flex-shrink:0; }
+.gb { height:5px; border-radius:3px; background:var(--s2); overflow:hidden; }
+.gf { height:100%; border-radius:3px; }
+
+/* toast */
+.toast {
+  position:fixed; bottom:20px; right:20px; z-index:999;
+  background:var(--s2); border:1px solid var(--bdr); border-radius:9px;
+  padding:11px 16px; font-size:.72rem; display:flex; align-items:center; gap:7px;
+  max-width:240px; box-shadow:0 8px 28px rgba(0,0,0,.45);
+  transform:translateY(65px); opacity:0; transition:all .26s cubic-bezier(.4,0,.2,1);
+}
+.toast.on { transform:translateY(0); opacity:1; }
+.tm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div class="logo"><div class="logo-dot"></div>BizPulse</div>
+    <div class="hdr-r">
+      <span class="pill">Mar 20, 2026</span>
+      <span class="pill pill-live"><span class="ldot"></span>LIVE</span>
+      <div class="av">JD</div>
+    </div>
+  </div>
+</header>
+
+<div class="tw">
+  <div class="tabs">
+    <div class="tab active" onclick="sw('finance')">💹 Finance</div>
+    <div class="tab" onclick="sw('clients')">👥 Clients</div>
+    <div class="tab" onclick="sw('projects')">🗂 Projects</div>
+  </div>
+</div>
+
+<main><div class="wrap">
+
+<!-- ═══════════ FINANCE ═══════════ -->
+<div class="panel active" id="panel-finance">
+  <div class="ph">
+    <div><div class="ph-t">Revenue Overview</div><div class="ph-s">Q1 2026 · Acme Consulting LLC</div></div>
+    <div class="frow">
+      <div class="fb on" onclick="sf(this)">This Month</div>
+      <div class="fb" onclick="sf(this)">Q1 2026</div>
+      <div class="fb" onclick="sf(this)">Last Year</div>
+    </div>
+  </div>
+
+  <div class="kg kg4">
+    <div class="kc g"><div class="kl">Total Revenue</div><div class="kv">$84,320</div><div class="kch up">↑ 18.4% vs last month</div></div>
+    <div class="kc p"><div class="kl">New Contracts</div><div class="kv">12</div><div class="kch up">↑ 3 more this week</div></div>
+    <div class="kc r"><div class="kl">Outstanding</div><div class="kv">$14,750</div><div class="kch dn">↓ 2 invoices overdue</div></div>
+    <div class="kc t"><div class="kl">Net Profit</div><div class="kv">$52,180</div><div class="kch up">↑ 61.9% margin</div></div>
+  </div>
+
+  <div class="cg">
+    <div class="card cp">
+      <div class="ch"><span class="ct">Monthly Revenue vs Expenses</span><span class="ctag">2026</span></div>
+      <div class="cbox"><canvas id="revenueChart"></canvas></div>
+    </div>
+    <div class="card cp">
+      <div class="ch"><span class="ct">Revenue by Category</span><span class="ctag">Breakdown</span></div>
+      <div class="cbox"><canvas id="categoryChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:var(--g)">
+    <div class="th">
+      <span class="tt">Recent Invoices</span>
+      <div class="ta">
+        <div class="sb"><span class="si">🔍</span><input type="text" placeholder="Search invoices…" id="inv-s" oninput="ft()"></div>
+        <div class="eb" onclick="xcsv()">↓ Export CSV</div>
+      </div>
+    </div>
+    <table id="it"><thead><tr>
+      <th onclick="st(0)">Invoice #</th>
+      <th onclick="st(1)">Client</th>
+      <th onclick="st(2)">Amount</th>
+      <th onclick="st(3)">Due Date</th>
+      <th onclick="st(4)">Status</th>
+    </tr></thead><tbody id="ib"></tbody></table>
+    <div class="pgr">
+      <span>Showing 1–7 of 14</span>
+      <div class="pbs">
+        <div class="pb2 on">1</div>
+        <div class="pb2">2</div>
+        <div class="pb2">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cg2">
+    <div class="card cp">
+      <div class="ch"><span class="ct">Top Clients by Revenue</span></div>
+      <div class="cbox"><canvas id="clientBarChart"></canvas></div>
+    </div>
+    <div class="card cp">
+      <div class="ch"><span class="ct">Cash Flow — 90 Days</span><span class="ctag">Trend</span></div>
+      <div class="cbox"><canvas id="cashflowChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CLIENTS ═══════════ -->
+<div class="panel" id="panel-clients">
+  <div class="ph">
+    <div><div class="ph-t">Client Directory</div><div class="ph-s">14 active clients · Q1 2026</div></div>
+    <div class="frow">
+      <div class="fb on" onclick="sf(this)">All</div>
+      <div class="fb" onclick="sf(this)">Active</div>
+      <div class="fb" onclick="sf(this)">Prospects</div>
+    </div>
+  </div>
+
+  <div class="kg kg3">
+    <div class="kc g"><div class="kl">Active Clients</div><div class="kv">14</div><div class="kch up">↑ 3 added this month</div></div>
+    <div class="kc p"><div class="kl">Avg Deal Size</div><div class="kv">$6,023</div><div class="kch up">↑ 12% YoY</div></div>
+    <div class="kc t"><div class="kl">Retention Rate</div><div class="kv">91%</div><div class="kch up">↑ excellent</div></div>
+  </div>
+
+  <div class="card">
+    <div class="th">
+      <span class="tt">All Clients</span>
+      <div class="sb"><span class="si">🔍</span><input type="text" placeholder="Search clients…" oninput="fc(this.value)" style="background:none;border:none;outline:none;font-size:.72rem;color:var(--text);width:140px;font-family:'DM Sans',sans-serif;"></div>
+    </div>
+    <table id="ct"><thead><tr>
+      <th>Client</th><th>Industry</th><th>Revenue</th><th>Proj.</th><th>Status</th>
+    </tr></thead><tbody id="cb"></tbody></table>
+  </div>
+</div>
+
+<!-- ═══════════ PROJECTS ═══════════ -->
+<div class="panel" id="panel-projects">
+  <div class="ph">
+    <div><div class="ph-t">Active Projects</div><div class="ph-s">8 in progress · 3 due this week</div></div>
+    <div class="frow">
+      <div class="fb on" onclick="sf(this)">All</div>
+      <div class="fb" onclick="sf(this)">In Progress</div>
+      <div class="fb" onclick="sf(this)">Review</div>
+      <div class="fb" onclick="sf(this)">Done</div>
+    </div>
+  </div>
+
+  <div class="kg kg4">
+    <div class="kc g"><div class="kl">On Track</div><div class="kv">6</div><div class="kch up">↑ 75% of projects</div></div>
+    <div class="kc r"><div class="kl">At Risk</div><div class="kv">2</div><div class="kch dn">↓ needs attention</div></div>
+    <div class="kc p"><div class="kl">Completed Q1</div><div class="kv">11</div><div class="kch up">↑ 38% vs Q4</div></div>
+    <div class="kc t"><div class="kl">Avg Completion</div><div class="kv">84%</div><div class="kch up">↑ on time</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:var(--g)">
+    <div class="th"><span class="tt">Project Tracker</span></div>
+    <table id="pt"><thead><tr>
+      <th>Project</th><th>Client</th><th>Progress</th><th>Due</th><th>Status</th>
+    </tr></thead><tbody id="pb3"></tbody></table>
+  </div>
+
+  <div class="cg2">
+    <div class="card">
+      <div class="th"><span class="tt">Goal Progress</span></div>
+      <div id="gl"></div>
+    </div>
+    <div class="card cp">
+      <div class="ch"><span class="ct">Project Status Mix</span></div>
+      <div class="cbox"><canvas id="pieChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+</div></main>
+
+<div class="toast" id="toast"><span>✅</span><span class="tm" id="tm">Done!</span></div>
+
+<script>
+const invoices=[
+  {id:'INV-2601',client:'Maple & Co.',    amount:4800, due:'Mar 25, 2026',status:'paid'},
+  {id:'INV-2602',client:'Vertex Labs',    amount:9200, due:'Mar 28, 2026',status:'pending'},
+  {id:'INV-2603',client:'Blue Crane',     amount:3500, due:'Mar 15, 2026',status:'overdue'},
+  {id:'INV-2604',client:'Northfield Grp.',amount:12000,due:'Apr 01, 2026',status:'paid'},
+  {id:'INV-2605',client:'Orion Retail',   amount:6750, due:'Apr 05, 2026',status:'pending'},
+  {id:'INV-2606',client:'Maple & Co.',    amount:2200, due:'Mar 10, 2026',status:'paid'},
+  {id:'INV-2607',client:'Zenith Partners',amount:8900, due:'Mar 30, 2026',status:'pending'},
+];
+const clients=[
+  {name:'Maple & Co.',      ind:'Retail',    rev:22400,proj:4,st:'active',  col:'#c8f135',ini:'MC'},
+  {name:'Vertex Labs',      ind:'Tech',      rev:18600,proj:3,st:'active',  col:'#6c63ff',ini:'VL'},
+  {name:'Northfield Group', ind:'Finance',   rev:15200,proj:2,st:'active',  col:'#38d9a9',ini:'NG'},
+  {name:'Blue Crane Studio',ind:'Creative',  rev:9800, proj:3,st:'active',  col:'#ff6b6b',ini:'BC'},
+  {name:'Orion Retail',     ind:'E-comm.',   rev:8750, proj:2,st:'active',  col:'#ffc107',ini:'OR'},
+  {name:'Zenith Partners',  ind:'Consulting',rev:7400, proj:1,st:'active',  col:'#74c0fc',ini:'ZP'},
+  {name:'Summit Foods',     ind:'F&B',       rev:5600, proj:2,st:'prospect',col:'#f783ac',ini:'SF'},
+];
+const projects=[
+  {name:'Q1 Sales Dashboard',  client:'Maple & Co.',  pct:88,due:'Mar 24',status:'in-progress'},
+  {name:'Brand Site Redesign', client:'Blue Crane',   pct:62,due:'Apr 02',status:'in-progress'},
+  {name:'Inventory Tracker',   client:'Orion Retail', pct:95,due:'Mar 22',status:'review'},
+  {name:'Client Portal v2',    client:'Vertex Labs',  pct:40,due:'Apr 15',status:'in-progress'},
+  {name:'Finance Automation',  client:'Northfield',   pct:75,due:'Mar 28',status:'in-progress'},
+  {name:'Email Campaign Suite',client:'Zenith',       pct:20,due:'Apr 20',status:'at-risk'},
+  {name:'Mobile App Analytics',client:'Vertex Labs',  pct:15,due:'Apr 18',status:'at-risk'},
+  {name:'Loyalty Program',     client:'Maple & Co.',  pct:100,due:'Mar 18',status:'done'},
+];
+
+function sw(n){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['finance','clients','projects'][i]===n));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+}
+function sf(el){
+  el.closest('.frow').querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* charts */
+Chart.defaults.color='#5a5a6e';
+Chart.defaults.borderColor='#23232e';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=9;
+
+new Chart(document.getElementById('revenueChart'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Revenue',data:[58000,63000,84320,72000,0,0],backgroundColor:'rgba(200,241,53,.18)',borderColor:'#c8f135',borderWidth:2,borderRadius:5,borderSkipped:false},{label:'Expenses',data:[32000,35000,32140,0,0,0],backgroundColor:'rgba(108,99,255,.18)',borderColor:'#6c63ff',borderWidth:2,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:8,usePointStyle:true,padding:10}}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{callback:v=>'$'+(v/1000)+'k'}}}}});
+
+new Chart(document.getElementById('categoryChart'),{type:'doughnut',data:{labels:['Consulting','Dashboards','Design','Automation'],datasets:[{data:[38,28,22,12],backgroundColor:['#c8f135','#6c63ff','#38d9a9','#ff6b6b'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{position:'bottom',labels:{boxWidth:7,padding:9,usePointStyle:true}}}}});
+
+new Chart(document.getElementById('clientBarChart'),{type:'bar',data:{labels:['Maple & Co.','Vertex Labs','Northfield','Blue Crane','Orion'],datasets:[{data:[22400,18600,15200,9800,8750],backgroundColor:['#c8f135','#6c63ff','#38d9a9','#ff6b6b','#ffc107'],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{callback:v=>'$'+(v/1000)+'k'}},y:{grid:{display:false}}}}});
+
+new Chart(document.getElementById('cashflowChart'),{type:'line',data:{labels:['Dec 20','Jan 1','Jan 15','Feb 1','Feb 15','Mar 1','Mar 15','Mar 20'],datasets:[{label:'Net Cash',data:[18000,22000,19500,27000,31000,28500,38000,42180],borderColor:'#38d9a9',backgroundColor:'rgba(56,217,169,.07)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#38d9a9',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{callback:v=>'$'+(v/1000)+'k'}}}}});
+
+new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels:['In Progress','At Risk','Review','Done'],datasets:[{data:[4,2,1,1],backgroundColor:['#c8f135','#ff6b6b','#6c63ff','#38d9a9'],borderWidth:0,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:7,usePointStyle:true,padding:9}}}}});
+
+/* render */
+function ri(data){
+  document.getElementById('ib').innerHTML=data.map(v=>`<tr onclick="toast2('${v.id} selected')">
+    <td><span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">${v.id}</span></td>
+    <td title="${v.client}">${v.client}</td>
+    <td><span style="font-family:'DM Mono',monospace;font-weight:600">$${v.amount.toLocaleString()}</span></td>
+    <td style="color:var(--mut)">${v.due}</td>
+    <td><span class="bdg ${v.status}"><span class="bdg-d"></span>${v.status}</span></td>
+  </tr>`).join('');
+}
+ri(invoices);
+function ft(){const q=document.getElementById('inv-s').value.toLowerCase();ri(invoices.filter(i=>i.client.toLowerCase().includes(q)||i.id.toLowerCase().includes(q)));}
+function st(c){const k=['id','client','amount','due','status'];invoices.sort((a,b)=>a[k[c]]>b[k[c]]?1:-1);ri(invoices);toast2('Sorted by '+k[c]);}
+
+function rc(data){
+  document.getElementById('cb').innerHTML=data.map(c=>`<tr onclick="toast2('Viewing ${c.name}')">
+    <td><div class="cc"><div class="cav" style="background:${c.col}22;color:${c.col}">${c.ini}</div><span class="cn" title="${c.name}">${c.name}</span></div></td>
+    <td style="color:var(--mut)">${c.ind}</td>
+    <td><span style="font-family:'DM Mono',monospace;font-weight:600">$${c.rev.toLocaleString()}</span></td>
+    <td style="text-align:center;color:var(--mut)">${c.proj}</td>
+    <td><span class="bdg ${c.st}">${c.st}</span></td>
+  </tr>`).join('');
+}
+rc(clients);
+function fc(q){rc(clients.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())));}
+
+const sc={'in-progress':'pending','review':'pending','at-risk':'overdue','done':'paid'};
+document.getElementById('pb3').innerHTML=projects.map(p=>`<tr>
+  <td title="${p.name}" style="font-weight:500">${p.name}</td>
+  <td style="color:var(--mut)" title="${p.client}">${p.client}</td>
+  <td><div class="pw"><div class="pb"><div class="pf" style="width:${p.pct}%;background:${p.pct>=80?'#c8f135':p.pct>=40?'#6c63ff':'#ff6b6b'}"></div></div><span class="pp">${p.pct}%</span></div></td>
+  <td style="color:var(--mut)">${p.due}</td>
+  <td><span class="bdg ${sc[p.status]}">${p.status.replace('-',' ')}</span></td>
+</tr>`).join('');
+
+const goals=[
+  {name:'Q1 Revenue Target ($90k)',pct:93,col:'#c8f135'},
+  {name:'New Client Acquisition (5)',pct:80,col:'#6c63ff'},
+  {name:'Project On-Time Rate (90%)',pct:75,col:'#38d9a9'},
+  {name:'Client Satisfaction (4.8★)',pct:95,col:'#ffc107'},
+];
+document.getElementById('gl').innerHTML=goals.map(g=>`<div class="gi"><div class="gr2"><span class="gn">${g.name}</span><span class="gp">${g.pct}%</span></div><div class="gb"><div class="gf" style="width:${g.pct}%;background:${g.col}"></div></div></div>`).join('');
+
+function xcsv(){
+  const rows=[['Invoice','Client','Amount','Due','Status'],...invoices.map(i=>[i.id,i.client,'$'+i.amount,i.due,i.status])];
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
+  a.download='invoices-q1-2026.csv';a.click();
+  toast2('CSV exported!');
+}
+let _t;
+function toast2(msg){
+  const el=document.getElementById('toast');
+  document.getElementById('tm').textContent=msg;
+  el.classList.add('on'); clearTimeout(_t);
+  _t=setTimeout(()=>el.classList.remove('on'),2300);
+}
+
+/* entry anim */
+document.querySelectorAll('.kc').forEach((c,i)=>{
+  c.style.cssText+='opacity:0;transform:translateY(12px)';
+  setTimeout(()=>{c.style.transition='opacity .32s ease,transform .32s ease';c.style.opacity='1';c.style.transform='translateY(0)';},55*i);
+});
+</script>
+</body>
+</html>
